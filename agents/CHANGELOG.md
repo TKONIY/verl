@@ -7,4 +7,4 @@
 - Added `agents/CHANGELOG.md` for process-level change history.
 - Updated `AGENTS.md` to require maintaining the `agents/` tracking documents on every task.
 - Updated `AGENTS.md` to require committing completed local changes and pushing them to the `tkoniy` remote.
-- Recorded this documentation setup as completed work for the current task.
+- Clarified that task completion requires both committing and pushing, not just creating a local commit.

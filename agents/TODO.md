@@ -4,4 +4,4 @@
 - Keep `agents/PROGRESS.md` updated with the current task status.
 - Keep `agents/CHANGELOG.md` updated with every repo-facing process or documentation change.
 - Review `AGENTS.md` whenever contributor workflow requirements change.
-- Push completed work to the `tkoniy` remote after committing local updates.
+- Do not treat work as complete until updates are committed and pushed to the `tkoniy` remote.
