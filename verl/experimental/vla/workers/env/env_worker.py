@@ -128,6 +128,19 @@ class EnvWorker(Worker, DistProfilerExtension):
                         env_cls=IsaacEnv,
                     )
                 )
+
+        elif self.cfg.train.simulator_type == "cosmos":
+            from verl.experimental.vla.envs.cosmos_env import CosmosEnv
+
+            for _ in range(self.stage_num):
+                self.simulator_list.append(
+                    EnvManager(
+                        self.cfg.train,
+                        rank=self._rank,
+                        world_size=self._world_size,
+                        env_cls=CosmosEnv,
+                    )
+                )
         else:
             raise NotImplementedError(f"Simulator type {self.cfg.train.simulator_type} not implemented")
 

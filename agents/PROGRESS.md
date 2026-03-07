@@ -9,7 +9,8 @@
 ## Latest Update
 - Date: 2026-03-06
 - Task: Implement multimodal distributed RL profiling scaffolding, replay/buffer analysis docs, and reproducible experiment scripts.
-- State: Implemented, validating and summarizing
+- State: Implementing CosmosEnv, third_party intake, and repo-role analysis
+- 2026-03-07: Added `agents/wm/VLA_RL_MODES.md` under `agents/wm/` with a Chinese quick-reference note covering repository task types and a `PPO / GRPO / SAC / SFT` training-mode comparison.
 - 2026-03-07: Added Slurm guidance that when already on a compute node, heavy `srun` jobs must request fresh node allocations rather than reusing the current node.
 - 2026-03-07: Added ARM64 container guidance to use `~/code/verl_docker` images or build scripts, and require fresh compute-node allocations for heavyweight build and compile tasks.
 - 2026-03-07: Switched the ARM64 SIF launcher from in-container CuDNN writes to a persistent `~/code/verl_docker/runtime_overlays` overlay on shared storage so fresh-node jobs can repair SGLang CuDNN without exhausting writable tmpfs.
@@ -20,4 +21,12 @@
 - 2026-03-07: Updated the one-step-off launcher path to pass `actor_rollout_ref.hybrid_engine=False`, matching the async/disaggregate requirement without touching source code.
 
 ## Final Status
+- 2026-03-07: Implemented root-level third-party world-model intake plus experimental `CosmosEnv` support, with multi-GPU launchers and repo-role analysis docs for external VLA/world-model projects.
 - 2026-03-07: Completed the multimodal distributed RL profiling pass on fresh compute nodes, with successful `sync_colocate` runs at `3B` and `7B`, successful `one_step_off_disaggregate` runs at `3B` and `7B`, a documented `32B` single-node OOM boundary, and a documented `fully_async_disaggregate` blocker in the current ARM64 image.
+- 2026-03-07: Added a true `apptainer + ray_on_slurm` submit path for multinode runs, replacing the invalid `-N 2 --ntasks=1` shortcut that Slurm collapsed back to one node.
+- 2026-03-07: Fixed the true multinode Ray launcher to force `RAY_TMPDIR=/tmp/ray` and `ray start --temp-dir /tmp/ray` after the first 32-GPU run failed on a read-only `/local` temp path.
+- 2026-03-07: Added root-level `third_party/` submodules for `cosmos-predict2.5`, `cosmos-transfer2.5`, `cosmos-reason2`, `cosmos-rl`, `lingbot-vla`, `lingbot-va`, `dreamzero`, and `Motus`.
+- 2026-03-07: Added experimental `simulator_type=cosmos` support to `verl.experimental.vla` with a new `CosmosEnv`, a smoke-testable `mock` backend, and a future-facing `predict2` adapter path.
+- 2026-03-07: Added `prepare_cosmos_dataset.py`, `run_pi05_cosmos_sac.sh`, and `run_pi05_cosmos_sac_disagg.sh` for single-node and disaggregated multi-GPU world-model RL demos.
+- 2026-03-07: Added world-model/VLA role analysis docs under `agents/wm/` and public notes at `docs/examples/cosmos_world_model_rl.md` and `docs/examples/cosmos_world_model_rl_zh.md` covering `Cosmos`, `LingBot`, `DreamZero`, and `Motus`.
+- 2026-03-07: Added English and Chinese design notes for a dedicated world-model / embodied robotics RL framework, highlighting how role-composable world-action models differ from the current `verl` abstraction.

@@ -18,3 +18,10 @@
 - 2026-03-07: Patched `scripts/multimodality/run_profiled_grpo_vlm.sh` so `fully_async_disaggregate` launches with `actor_rollout_ref.hybrid_engine=False` via script overrides instead of source edits.
 - 2026-03-07: Rewrote the ARM64 apptainer launcher so the shared runtime overlay can also install `cupy-cuda12x` for fully-async runs while still binding CuDNN/CUBLAS into container site-packages.
 - 2026-03-07: Patched `scripts/multimodality/run_profiled_grpo_vlm.sh` so `one_step_off_disaggregate` also disables `actor_rollout_ref.hybrid_engine` through script overrides.
+- 2026-03-07: Added `scripts/multimodality/submit_profile_apptainer_ray_slurm.sh` for real multinode `ray_on_slurm` execution with the ARM64 apptainer runtime.
+- 2026-03-07: Added `agents/wm/VLA_RL_MODES.md` and `agents/wm/README.md` with a quick task mapping and training-mode comparison across `PPO`, `GRPO`, `SAC`, and `SFT`.
+
+- 2026-03-07: Added root-level `third_party/` git submodules for NVIDIA Cosmos repos plus `lingbot-vla`, `lingbot-va`, `dreamzero`, and `Motus`.
+- 2026-03-07: Added experimental `CosmosEnv` support under `verl.experimental.vla`, including `simulator_type=cosmos`, a dataset generator, and single-node/disaggregated SAC launch scripts.
+- 2026-03-07: Added world-model role analysis notes in `agents/wm/` and public docs `docs/examples/cosmos_world_model_rl.md` plus `docs/examples/cosmos_world_model_rl_zh.md` to explain how Cosmos, LingBot, DreamZero, and Motus map onto RL and whether they fit the current `verl` contracts.
+- 2026-03-07: Added bilingual design notes in `agents/wm/WORLD_MODEL_RL_FRAMEWORK.md` and `agents/wm/WORLD_MODEL_RL_FRAMEWORK_zh.md` describing a dedicated embodied/world-model RL framework and the biggest conceptual differences from `verl`.

@@ -1,3 +1,27 @@
 [submodule "recipe"]
 	path = recipe
 	url = https://github.com/verl-project/verl-recipe.git
+[submodule "third_party/cosmos-predict2.5"]
+	path = third_party/cosmos-predict2.5
+	url = https://github.com/nvidia-cosmos/cosmos-predict2.5.git
+[submodule "third_party/cosmos-transfer2.5"]
+	path = third_party/cosmos-transfer2.5
+	url = https://github.com/nvidia-cosmos/cosmos-transfer2.5.git
+[submodule "third_party/cosmos-reason2"]
+	path = third_party/cosmos-reason2
+	url = https://github.com/nvidia-cosmos/cosmos-reason2.git
+[submodule "third_party/cosmos-rl"]
+	path = third_party/cosmos-rl
+	url = https://github.com/nvidia-cosmos/cosmos-rl.git
+[submodule "third_party/lingbot-vla"]
+	path = third_party/lingbot-vla
+	url = https://github.com/Robbyant/lingbot-vla.git
+[submodule "third_party/lingbot-va"]
+	path = third_party/lingbot-va
+	url = https://github.com/Robbyant/lingbot-va.git
+[submodule "third_party/dreamzero"]
+	path = third_party/dreamzero
+	url = https://github.com/dreamzero0/dreamzero.git
+[submodule "third_party/Motus"]
+	path = third_party/Motus
+	url = https://github.com/thu-ml/Motus.git
