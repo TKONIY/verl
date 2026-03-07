@@ -1,49 +1,76 @@
 # Results
 
-## Expected Per-Run Record
-- Mode and model size
-- Node/GPU layout
-- Mean `timing_s/step`
-- Top 5 timing contributors
-- `multimodal/payload_mb`
-- `timing_s/queue_wait` and queue payload metrics for async runs
-- Final judgment: whether buffer/replay is a primary, secondary, or non-primary bottleneck
+## Successful Multimodal Runs
+- `sync_colocate | 3B | 1 node x 4 GPU`
+  - `timing_s/step`: `26.65`
+  - `timing_s/gen`: `16.66`
+  - `timing_s/ref`: `2.99`
+  - `timing_s/old_log_prob`: `2.62`
+  - `timing_s/update_actor`: `1.51`
+  - `multimodal/payload_mb`: `23.00`
+  - `perf/throughput`: `46.97`
+  - Source: `runs/multimodality/summaries/sync_colocate_3b_1node_metrics.json`
+- `sync_colocate | 7B | 1 node x 4 GPU`
+  - `timing_s/step`: `30.36`
+  - `timing_s/gen`: `16.66`
+  - `timing_s/ref`: `6.29`
+  - `timing_s/old_log_prob`: `2.10`
+  - `timing_s/update_actor`: `1.87`
+  - `multimodal/payload_mb`: `27.08`
+  - `perf/throughput`: `41.64`
+  - Source: `runs/multimodality/summaries/sync_colocate_7b_1node_metrics.json`
+- `one_step_off_disaggregate | 3B | 1 node x 4 GPU`
+  - `timing_s/step`: `20.21`
+  - `timing_s/gen`: `11.52`
+  - `timing_s/ref`: `5.45`
+  - `timing_s/update_actor`: `1.64`
+  - `timing_s/sync_rollout_weights`: `0.84`
+  - `multimodal/payload_mb`: `18.55`
+  - `perf/throughput`: `104.85`
+  - Source: `runs/multimodality/summaries/one_step_off_disaggregate_3b_1node_metrics.json`
+- `one_step_off_disaggregate | 7B | 1 node x 4 GPU`
+  - `timing_s/step`: `32.20`
+  - `timing_s/gen`: `14.42`
+  - `timing_s/ref`: `12.62`
+  - `timing_s/update_actor`: `3.32`
+  - `timing_s/sync_rollout_weights`: `0.87`
+  - `multimodal/payload_mb`: `18.38`
+  - `perf/throughput`: `80.33`
+  - Source: `runs/multimodality/summaries/one_step_off_disaggregate_7b_1node_metrics.json`
+- `sync_colocate | 3B | 8 node / 32 GPU`
+  - `timing_s/step`: `27.57`
+  - `timing_s/gen`: `6.32`
+  - `timing_s/ref`: `1.89`
+  - `timing_s/old_log_prob`: `4.57`
+  - `timing_s/update_actor`: `6.03`
+  - `timing_s/update_weights`: `8.75`
+  - `multimodal/payload_mb`: `84.86`
+  - `perf/throughput`: `19.20`
+  - Source: `runs/multimodality/summaries/sync_colocate_3b_8node32gpu_metrics.json`
+- `one_step_off_disaggregate | 3B | 8 node / 32 GPU`
+  - `timing_s/step`: `52.17`
+  - `timing_s/gen`: `13.07`
+  - `timing_s/ref`: `3.84`
+  - `timing_s/update_actor`: `9.68`
+  - `timing_s/update_weights`: `25.17`
+  - `timing_s/sync_rollout_weights`: `12.73`
+  - `multimodal/payload_mb`: `207.37`
+  - `perf/throughput`: `44.21`
+  - Source: `runs/multimodality/summaries/one_step_off_disaggregate_3b_8node32gpu_metrics.json`
 
-## Recorded Runs
-- `sync_colocate | 3B | 1 node x 4 GPU | run sync_colocate_3b_sglang_overlay_smoke4_20260307_020511`
-  - Mean `timing_s/step`: `26.6535s`
-  - Mean `timing_s/gen`: `16.6598s`
-  - Mean `timing_s/old_log_prob`: `2.6153s`
-  - Mean `timing_s/update_actor`: `1.5114s`
-  - Mean `multimodal/payload_mb`: `23.0049`
-  - Buffer verdict: `not the primary bottleneck`
-- `sync_colocate | 7B | 1 node x 4 GPU | run sync_colocate_7b_sglang_20260307_020855`
-  - Mean `timing_s/step`: `30.3625s`
-  - Mean `timing_s/gen`: `16.6577s`
-  - Mean `timing_s/old_log_prob`: `2.1026s`
-  - Mean `timing_s/update_actor`: `1.8716s`
-  - Mean `multimodal/payload_mb`: `27.0782`
-  - Buffer verdict: `not the primary bottleneck`
-- `sync_colocate | 32B | 1 node x 4 GPU | run sync_colocate_32b_sglang_2667913`
-  - Status: `failed with OOM during checkpoint/model load on 4xGH200`
-  - Observation: `single-node 4-GPU GH200 is not a stable configuration for this 32B VLM profile setup without further sharding or lower-memory rollout settings`
-- `one_step_off_disaggregate | 3B | trainer 2 GPU + rollout 2 GPU | run one_step_off_disaggregate_3b_sglang_2667920`
-  - Mean `timing_s/step`: `20.2142s`
-  - Mean `timing_s/gen`: `11.5241s`
-  - Mean `timing_s/ref`: `5.4495s`
-  - Mean `timing_s/update_actor`: `1.6441s`
-  - Mean `timing_s/sync_rollout_weights`: `0.8424s`
-  - Mean `multimodal/payload_mb`: `18.5547`
-  - Buffer verdict: `not the primary bottleneck`
-- `one_step_off_disaggregate | 7B | trainer 2 GPU + rollout 2 GPU | run one_step_off_disaggregate_7b_sglang_2667925`
-  - Mean `timing_s/step`: `32.2045s`
-  - Mean `timing_s/gen`: `14.4204s`
-  - Mean `timing_s/ref`: `12.6178s`
-  - Mean `timing_s/update_actor`: `3.3193s`
-  - Mean `timing_s/sync_rollout_weights`: `0.8664s`
-  - Mean `multimodal/payload_mb`: `18.3752`
-  - Buffer verdict: `not the primary bottleneck`
-- `fully_async_disaggregate | 3B | trainer 2 GPU + rollout 2 GPU | run fully_async_disaggregate_3b_sglang_2667919`
-  - Status: `blocked in current ARM64 image`
-  - Observation: `after fixing CuDNN, hybrid_engine, and cupy, the rollout path still fails on missing module \`vllm\` from \`sglang.srt.weight_sync\``
-  - Evidence: `runs/multimodality/slurm_logs/mm_fully_async_disaggregate_3b_sglang_2667919.out`
+## Blocked / Boundary Cases
+- `fully_async_disaggregate | 3B | sglang`
+  - Latest evidence: initialization succeeds, then the run stalls before emitting the first `step:` metrics line.
+  - Terminal log signature: log stops after `CheckpointEngineWorker ... [Gloo] Rank 0 is connected ...`.
+  - Evidence: `runs/multimodality/fully_async_disaggregate_3b_sglang_smoke3_wt_20260307_113040/train.log`
+- `sync_colocate | 32B | 1 node x 4 GPU`
+  - Status: OOM during model / checkpoint load.
+  - Evidence: `/lus/lfs1aip2/scratch/u5gl/yangshen.u5gl/code/verl/runs/multimodality/sync_colocate_32b_sglang_2667913`
+
+## VLA Status
+- Repro scripts are in place at `scripts/vla/run_profiled_libero_grpo_apptainer.sh`, `scripts/vla/submit_profile_libero_grpo_slurm.sh`, and `scripts/vla/setup_vla_runtime_overlay.sh`.
+- The dependency and import blockers are fixed in script/runtime-overlay space.
+- Latest runs:
+  - `vla_libero_grpo_smoke10_wt_20260307_231332`: clears imports and `ray.init`, then hits Slurm OOM after local Ray startup.
+  - `vla_libero_grpo_smoke11_wt_20260307_231610`: clears imports and `ray.init`, then stalls before first-step logs; cancelled after ~5 minutes with `MaxRSS` about `110 GB` to avoid wasting GPUs.
+- Current conclusion: the VLA example is reproducibly launchable in this environment, but not yet first-step stable under the available script-only configuration.

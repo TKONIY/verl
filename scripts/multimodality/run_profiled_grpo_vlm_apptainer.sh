@@ -18,11 +18,16 @@ TRAINER_N_GPUS_PER_NODE=${TRAINER_N_GPUS_PER_NODE:-2}
 ROLLOUT_N_GPUS_PER_NODE=${ROLLOUT_N_GPUS_PER_NODE:-2}
 GLOBAL_PROFILER_TOOL=${GLOBAL_PROFILER_TOOL:-torch}
 RAY_NUM_CPUS=${RAY_NUM_CPUS:-${SLURM_CPUS_PER_TASK:-16}}
+RAY_ADDRESS=${RAY_ADDRESS:-}
+RAY_PRESERVE_VISIBLE_DEVICES=${RAY_PRESERVE_VISIBLE_DEVICES:-0}
 RUN_NAME=${RUN_NAME:-${MODE}_${MODEL_SIZE}_${ENGINE}_$(date +%Y%m%d_%H%M%S)}
 LOCALIZE_MODEL_FROM_HF=${LOCALIZE_MODEL_FROM_HF:-1}
 SGLANG_FIX_CUDNN=${SGLANG_FIX_CUDNN:-1}
-RUNTIME_OVERLAY_HOST=${RUNTIME_OVERLAY_HOST:-$VERL_DOCKER_ROOT/runtime_overlays/sglang_cudnn916_py310_arm64}
-RUNTIME_OVERLAY_CONTAINER=/workspace/verl_docker/runtime_overlays/sglang_cudnn916_py310_arm64
+RUNTIME_OVERLAY_HOST=${RUNTIME_OVERLAY_HOST:-$VERL_DOCKER_ROOT/runtime_overlays/sglang_cudnn916_py310_arm64_notorch}
+RUNTIME_OVERLAY_CONTAINER=/workspace/verl_docker/runtime_overlays/sglang_cudnn916_py310_arm64_notorch
+CONTAINER_HOME=${CONTAINER_HOME:-/tmp/verl_home}
+CONTAINER_CACHE_HOME=${CONTAINER_CACHE_HOME:-$CONTAINER_HOME/.cache}
+CONTAINER_TRITON_CACHE=${CONTAINER_TRITON_CACHE:-$CONTAINER_CACHE_HOME/triton}
 
 mkdir -p "$HF_CACHE_DIR" "$RUN_ROOT/$RUN_NAME" "$RUNTIME_OVERLAY_HOST" "$RUN_ROOT/tmp/pip"
 
@@ -30,7 +35,10 @@ INNER=$(cat <<'INNER_EOF'
 set -euo pipefail
 cd /workspace/verl
 export PYTHONPATH=/workspace/verl${PYTHONPATH:+:$PYTHONPATH}
-export HOME=/tmp
+export HOME=__CONTAINER_HOME__
+export XDG_CACHE_HOME=__CONTAINER_CACHE_HOME__
+export FLASHINFER_WORKSPACE_BASE=__CONTAINER_HOME__
+export TRITON_CACHE_DIR=__CONTAINER_TRITON_CACHE__
 export TMPDIR=/workspace/verl/runs/multimodality/tmp/pip
 export HF_HOME=__HF_CACHE_MOUNT__
 export TRANSFORMERS_CACHE=__HF_CACHE_MOUNT__
@@ -53,8 +61,14 @@ export LOCALIZE_MODEL_FROM_HF=__LOCALIZE_MODEL_FROM_HF__
 export SGLANG_FIX_CUDNN=__SGLANG_FIX_CUDNN__
 export RUNTIME_OVERLAY=__RUNTIME_OVERLAY_CONTAINER__
 export RAY_NUM_CPUS=__RAY_NUM_CPUS__
+export RAY_ADDRESS=__RAY_ADDRESS__
+export RAY_PRESERVE_VISIBLE_DEVICES=__RAY_PRESERVE_VISIBLE_DEVICES__
+if [[ "$RAY_PRESERVE_VISIBLE_DEVICES" == "1" ]]; then
+  export RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1
+  export RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+fi
 export RAY_TMPDIR=/workspace/verl/raytmp
-mkdir -p "$RAY_TMPDIR" /workspace/verl/runs/multimodality/__RUN_NAME__ __HF_CACHE_MOUNT__ "$TMPDIR" "$RUNTIME_OVERLAY"
+mkdir -p "$RAY_TMPDIR" /workspace/verl/runs/multimodality/__RUN_NAME__ __HF_CACHE_MOUNT__ "$TMPDIR" "$RUNTIME_OVERLAY" "$HOME" "$XDG_CACHE_HOME" "$HOME/.cache/flashinfer" "$TRITON_CACHE_DIR"
 LOG=/workspace/verl/runs/multimodality/__RUN_NAME__/train.log
 
 if [[ "$ENGINE" == "sglang" && "$SGLANG_FIX_CUDNN" == "1" ]]; then
@@ -140,10 +154,30 @@ PY
 fi
 
 echo "run_name=$RUN_NAME mode=$MODE model_size=$MODEL_SIZE engine=$ENGINE model_path=$MODEL_PATH" | tee -a "$LOG"
-bash scripts/multimodality/run_profiled_grpo_vlm.sh \
-  +ray_kwargs.ray_init.num_cpus=$RAY_NUM_CPUS \
-  +ray_kwargs.ray_init.runtime_env.env_vars.PYTHONPATH=$PYTHONPATH \
-  2>&1 | tee -a "$LOG"
+EXTRA_RAY_ARGS=(
+  "+ray_kwargs.ray_init.runtime_env.env_vars.PYTHONPATH=\"$PYTHONPATH\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.HOME=\"$HOME\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.XDG_CACHE_HOME=\"$XDG_CACHE_HOME\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.FLASHINFER_WORKSPACE_BASE=\"$HOME\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.TRITON_CACHE_DIR=\"$TRITON_CACHE_DIR\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.HF_HOME=\"$HF_HOME\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.TRANSFORMERS_CACHE=\"$TRANSFORMERS_CACHE\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.WANDB_MODE=\"$WANDB_MODE\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.VLLM_USE_V1=\"$VLLM_USE_V1\""
+  "+ray_kwargs.ray_init.runtime_env.env_vars.RAY_TMPDIR=\"$RAY_TMPDIR\""
+)
+if [[ "$RAY_PRESERVE_VISIBLE_DEVICES" == "1" ]]; then
+  EXTRA_RAY_ARGS+=(
+    "+ray_kwargs.ray_init.runtime_env.env_vars.RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=\"1\""
+    "+ray_kwargs.ray_init.runtime_env.env_vars.RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=\"0\""
+  )
+fi
+if [[ -n "$RAY_ADDRESS" ]]; then
+  EXTRA_RAY_ARGS+=(+ray_kwargs.ray_init.address=$RAY_ADDRESS)
+else
+  EXTRA_RAY_ARGS+=(+ray_kwargs.ray_init.num_cpus=$RAY_NUM_CPUS)
+fi
+bash scripts/multimodality/run_profiled_grpo_vlm.sh "${EXTRA_RAY_ARGS[@]}" 2>&1 | tee -a "$LOG"
 test ${PIPESTATUS[0]} -eq 0
 INNER_EOF
 )
@@ -163,6 +197,11 @@ INNER=${INNER//__LOCALIZE_MODEL_FROM_HF__/$LOCALIZE_MODEL_FROM_HF}
 INNER=${INNER//__SGLANG_FIX_CUDNN__/$SGLANG_FIX_CUDNN}
 INNER=${INNER//__RUNTIME_OVERLAY_CONTAINER__/$RUNTIME_OVERLAY_CONTAINER}
 INNER=${INNER//__RAY_NUM_CPUS__/$RAY_NUM_CPUS}
+INNER=${INNER//__RAY_ADDRESS__/$RAY_ADDRESS}
+INNER=${INNER//__RAY_PRESERVE_VISIBLE_DEVICES__/$RAY_PRESERVE_VISIBLE_DEVICES}
+INNER=${INNER//__CONTAINER_HOME__/$CONTAINER_HOME}
+INNER=${INNER//__CONTAINER_CACHE_HOME__/$CONTAINER_CACHE_HOME}
+INNER=${INNER//__CONTAINER_TRITON_CACHE__/$CONTAINER_TRITON_CACHE}
 
 BIND_PATHS="$REPO_DIR:/workspace/verl,$DATA_DIR:/workspace/data,$HF_CACHE_DIR:$HF_CACHE_MOUNT,$VERL_DOCKER_ROOT:/workspace/verl_docker"
 if [[ "$ENGINE" == "sglang" && "$SGLANG_FIX_CUDNN" == "1" ]]; then

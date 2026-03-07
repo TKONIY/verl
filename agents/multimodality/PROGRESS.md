@@ -1,25 +1,19 @@
 # Progress
 
 ## Current Status
-- Added a reusable launcher for profiled multimodal GRPO runs.
-- Added structured metric summarization for timing, multimodal payload, and async buffer metrics.
-- Added queue-level timing hooks for fully async training.
+- Multimodal GRPO profiling is complete for the requested distributed comparison matrix that was runnable in this environment.
+- Successful measurements exist for `sync_colocate` and `one_step_off_disaggregate` at both `1 node` and `32 GPU / 8 node` scales.
+- `fully_async_disaggregate + sglang` now initializes correctly but stalls before the first optimization step in this ARM64 GH200 environment.
+- VLA Libero profiling scripts are in place; the latest smoke runs clear dependency import and `ray.init`, but still fail before the first training step due high-memory worker materialization in this environment.
 
 ## Latest Update
-- Date: 2026-03-06
-- Task: Implement multimodal benchmark/profiler scaffolding and analysis docs.
-- State: Implemented, pending validation summary
-- 2026-03-07: Environment guidance updated to prefer `~/code/verl_docker` ARM64 images and to reserve fresh compute nodes for heavyweight build/install steps.
-- 2026-03-07: Verified `~/code/verl_docker/verl_sgl056_arm64_latest.sif` works with the current bound worktree and launched the first fresh-node `sync_colocate + 3B + sglang` smoke run.
-- 2026-03-07: Isolated and fixed two SIF launcher issues: invalid container HF cache path and Ray AF_UNIX socket overlong paths from an overly long `RAY_TMPDIR`.
-- 2026-03-07: Reworked the SIF launcher to mount `~/code/verl_docker` and install the required CuDNN wheel into a persistent shared overlay, avoiding writable-tmpfs exhaustion on fresh compute nodes.
-- 2026-03-07: Confirmed the persistent overlay exposes CuDNN through `importlib.metadata`; updated the launcher probe accordingly after the first fresh-node overlay install.
-- 2026-03-07: Capped actor and log-prob micro-batches by the normalized PPO mini-batch per trainer GPU so short fresh-node smoke runs stay script-only and avoid FSDP batch-shape assertions.
-- 2026-03-07: Replaced the failed `LD_LIBRARY_PATH`-only approach with direct bind mounts of the persistent overlay onto container `site-packages/nvidia/{cudnn,cublas}`, while keeping all heavyweight verification on newly allocated compute nodes.
-- 2026-03-07: Tightened `summarize_profile.py` to exclude non-time helper fields like prompt and response lengths from the ranked timing table.
-- 2026-03-07: Diagnosed the first `fully_async` failure as a config issue, then aligned the launcher with official async shell examples by forcing `actor_rollout_ref.hybrid_engine=False`.
-- 2026-03-07: Added `cupy-cuda12x` staging to the shared overlay and propagated it to Ray workers after the first fully-async failure showed NCCL checkpoint registration was blocked by a missing `cupy` import.
-- 2026-03-07: Confirmed `one_step_off_disaggregate` shares the same hybrid-engine assertion path as `fully_async` and updated the launcher override accordingly.
+- Date: 2026-03-07
+- Task: Consolidate multimodal and VLA profiling evidence into final reproducible reports.
+- State: Reports updated; VLA blocker documented with final evidence.
+- 2026-03-07: Saved extracted metric JSON files under `runs/multimodality/summaries/` for all successful baseline runs.
+- 2026-03-07: Added `runs/multimodality/summary_suite.md` with a single comparison table covering `1 node` and `32 GPU` runs.
+- 2026-03-07: Confirmed the `fully_async` terminal symptom is a pre-step stall after `CheckpointEngineWorker` initialization, not the earlier missing-`vllm` import path.
 
 ## Final Status
-- 2026-03-07: Finished the planned fresh-node benchmark pass and published summaries for `sync_colocate` (`3B`, `7B`) and `one_step_off_disaggregate` (`3B`, `7B`), with explicit blocker notes for `fully_async_disaggregate` and `32B` single-node memory limits.
+- Multimodal profiling report is ready.
+- Only cleanup, commit, and push remain.

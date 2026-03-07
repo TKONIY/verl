@@ -1,45 +1,82 @@
-# Multimodal RL Distributed Performance Report
+# Multimodal and VLA Distributed Profiling Report
 
 ## Scope
-- Cluster path: fresh Slurm compute nodes only
-- Runtime path: `~/code/verl_docker/verl_sgl056_arm64_latest.sif` with persistent overlay under `~/code/verl_docker/runtime_overlays/sglang_cudnn916_py310_arm64`
-- Modes attempted: `sync_colocate`, `one_step_off_disaggregate`, `fully_async_disaggregate`
-- Model sizes attempted: `3B`, `7B`, `32B`
+- Cluster policy: fresh Slurm compute nodes only, never login nodes for GPU work.
+- Runtime path: `~/code/verl_docker/verl_sgl056_arm64_latest.sif` plus shared overlays under `~/code/verl_docker/runtime_overlays/`.
+- Multimodal modes: `sync_colocate`, `one_step_off_disaggregate`, `fully_async_disaggregate`.
+- Multimodal sizes: `3B`, `7B`, `32B` boundary check, plus a `32 GPU` scale comparison.
+- VLA path: Libero GRPO smoke profiling with the same container workflow.
 
-## Repro Scripts
-- Base launcher: `scripts/multimodality/run_profiled_grpo_vlm.sh`
-- ARM64 container launcher: `scripts/multimodality/run_profiled_grpo_vlm_apptainer.sh`
-- Fresh-node submit helper: `scripts/multimodality/submit_profile_apptainer_slurm.sh`
-- Aggregation helpers: `scripts/multimodality/summarize_profile.py`, `scripts/multimodality/summarize_suite.py`
-- Successful run artifacts:
-  - `runs/multimodality/sync_colocate_3b_sglang_overlay_smoke4_20260307_020511`
-  - `runs/multimodality/sync_colocate_7b_sglang_20260307_020855`
-  - `runs/multimodality/one_step_off_disaggregate_3b_sglang_2667920`
-  - `runs/multimodality/one_step_off_disaggregate_7b_sglang_2667925`
+## Reproducibility Assets
+- Multimodal launcher: `scripts/multimodality/run_profiled_grpo_vlm.sh`
+- Multimodal Apptainer launcher: `scripts/multimodality/run_profiled_grpo_vlm_apptainer.sh`
+- Multinode Ray-on-Slurm helper: `scripts/multimodality/submit_profile_apptainer_ray_slurm.sh`
+- Train-log metric extraction: `scripts/multimodality/extract_trainlog_metrics.py`
+- Metric JSON outputs: `runs/multimodality/summaries/*.json`
+- Suite comparison table: `runs/multimodality/summary_suite.md`
+- VLA launcher: `scripts/vla/run_profiled_libero_grpo_apptainer.sh`
+- VLA Slurm helper: `scripts/vla/submit_profile_libero_grpo_slurm.sh`
+- VLA runtime prep: `scripts/vla/setup_vla_runtime_overlay.sh`
 
-## Successful Measurements
-- `sync_colocate 3B`: step `26.65s`, gen `16.66s`, old-log-prob `2.62s`, actor update `1.51s`, payload `23.00 MB`
-- `sync_colocate 7B`: step `30.36s`, gen `16.66s`, ref `6.29s`, actor update `1.87s`, payload `27.08 MB`
-- `one_step_off 3B`: step `20.21s`, gen `11.52s`, ref `5.45s`, actor update `1.64s`, sync-rollout-weights `0.84s`, payload `18.55 MB`
-- `one_step_off 7B`: step `32.20s`, gen `14.42s`, ref `12.62s`, actor update `3.32s`, sync-rollout-weights `0.87s`, payload `18.38 MB`
+## Pipeline Coordination
+```text
+        +--------------------+        samples / prompts / media refs
+        |   Dataset Loader   | -----------------------------------------+
+        +--------------------+                                          |
+                                                                       v
++------------------+     token ids / image refs / rollout version   +-------------------+
+| Trainer / Actor  | <--------------------------------------------> | Rollout Workers   |
+| PPO / GRPO step  |      rewards / logprobs / masks / seq lens     | sglang / envloop  |
++------------------+                                                 +-------------------+
+        |                                                                          |
+        | gradients / updated weights                                              | generated responses / env transitions
+        v                                                                          v
++------------------+     checkpoints / parameter sync / queues      +-------------------+
+| Checkpoint / Sync| <--------------------------------------------> | Replay / Buffers   |
++------------------+         metadata, cache keys, compact state    +-------------------+
+```
 
-## Findings
-- Generation dominates end-to-end step time in every successful run.
-- `one_step_off_disaggregate` improves `3B` step time versus `sync_colocate` (`20.21s` vs `26.65s`) by overlapping rollout and update work.
-- At `7B`, async disaggregation does not beat sync on total step time (`32.20s` vs `30.36s`) because reference / sync-update cost grows materially.
-- Multimodal payloads stay in an `18-27 MB` range per sampled batch in these short runs; this is noticeable but not yet the primary bottleneck.
-- Replay / queue recommendation: store tokenized text trajectory data, scalar rewards / advantages / masks, rollout parameter version, and media references (`image path`, `video path`, cache key). Do **not** store raw image bytes or dense vision tensors in the replay / transfer path by default.
+## What Moves Between Stages
+- Text side: prompt ids, response ids, attention masks, position ids, rewards, advantages, KL metadata, rollout parameter version.
+- Vision side: image/video references, counts, optional cache keys, and compact derived stats such as visual token proxy.
+- Async-only path: queue payload metadata, sample freshness / staleness signals, and rollout-weight synchronization events.
+- VLA-specific path: low-dimensional robot state, action chunks, done flags, and observation references.
 
-## Bottleneck Assessment
-- With current evidence, multimodal replay storage is **not** the primary bottleneck for the successful runs.
-- The most sensitive components are generation, reference / old-log-prob recomputation, and weight-sync overhead in async disaggregate mode.
-- Replay becomes a likely bottleneck only if queue wait starts consuming >15% of step time, or if raw media tensors are pushed through the queue.
+## Multimodal Results
+### 1-node baselines
+- `sync_colocate 3B`: step `26.65s`, gen `16.66s`, payload `23.00 MB`, throughput `46.97`
+- `sync_colocate 7B`: step `30.36s`, gen `16.66s`, payload `27.08 MB`, throughput `41.64`
+- `one_step_off_disaggregate 3B`: step `20.21s`, gen `11.52s`, payload `18.55 MB`, throughput `104.85`
+- `one_step_off_disaggregate 7B`: step `32.20s`, gen `14.42s`, payload `18.38 MB`, throughput `80.33`
 
-## Failed / Boundary Cases
-- `fully_async_disaggregate 3B`: environment and config fixes succeeded through CuDNN, hybrid-engine, and `cupy`, but the rollout path still failed on missing `vllm` import inside `sglang.srt.weight_sync`; see `runs/multimodality/slurm_logs/mm_fully_async_disaggregate_3b_sglang_2667919.out`.
-- `sync_colocate 32B`: failed with OOM during model load on `1 node x 4 GPU`; see `runs/multimodality/slurm_logs/mm_sync_colocate_32b_sglang_2667913.err`.
+### 32-GPU comparison
+- `sync_colocate 3B | 8 node / 32 GPU`: step `27.57s`, gen `6.32s`, old-log-prob `4.57s`, update-weights `8.75s`, payload `84.86 MB`, throughput `19.20`
+- `one_step_off_disaggregate 3B | 8 node / 32 GPU`: step `52.17s`, gen `13.07s`, sync-rollout-weights `12.73s`, update-weights `25.17s`, payload `207.37 MB`, throughput `44.21`
 
-## Practical Conclusion
-- For this ARM64 GH200 environment, the most reliable distributed multimodal RL configuration today is `one_step_off_disaggregate` for `3B`, with `7B` still feasible but no longer clearly faster than sync.
-- `sync_colocate` remains the cleanest baseline and scales from `3B` to `7B` without major surgery.
-- `fully_async_disaggregate` needs an image that also includes a working `vllm` dependency chain before it can be profiled fairly on this cluster.
+## Interpretation
+- Generation is still the largest single component in every successful run.
+- `one_step_off_disaggregate` is clearly best at `3B` on `1 node`, cutting step time from `26.65s` to `20.21s`.
+- At `7B`, async disaggregation loses its edge because reference and sync costs grow faster than the rollout overlap benefit.
+- At `32 GPU`, `one_step_off_disaggregate` raises throughput but also expands payload size and weight-sync overhead sharply; that mode is no longer latency-efficient per step.
+- The `32 GPU` sync baseline keeps per-step latency close to the `1 node` case because generation parallelizes well, but total distributed coordination still limits end-to-end throughput efficiency.
+
+## Replay / Buffer Conclusion
+- The replay path should store tokenized trajectories, scalar learning metadata, rollout versioning, and media references.
+- Do not default to raw image bytes, decoded `pixel_values`, dense visual embeddings, or simulator objects inside replay.
+- In the successful multimodal runs, replay is **not** the dominant bottleneck; rollout generation and synchronization are.
+- For VLA, the more likely near-term bottlenecks are simulator / observation serialization and env-loop latency, not replay layout.
+
+## Failed or Partial Cases
+- `fully_async_disaggregate + sglang`: now gets through initialization, but still stalls before the first training step; latest evidence is `runs/multimodality/fully_async_disaggregate_3b_sglang_smoke3_wt_20260307_113040/train.log`.
+- `sync_colocate 32B`: OOM on `1 x 4 GH200`; a larger-shard or multinode layout is required.
+
+## VLA Status
+- The VLA Libero path now passes dependency import checks inside the container, reaches trainer startup, and successfully initializes local Ray.
+- Earlier blockers fixed without source edits: missing `compute_reward` shim, LIBERO source availability, `robosuite` macro import, `termcolor`, MuJoCo EGL configuration, `/local` temp-dir writes, and Ray temp-dir placement.
+- The remaining blocker is pre-step worker / model materialization pressure: `vla_libero_grpo_smoke10_wt_20260307_231332` hits Slurm OOM shortly after local Ray startup, while `vla_libero_grpo_smoke11_wt_20260307_231610` avoids immediate OOM but shows no post-`ray.init` progress and was cancelled after ~5 minutes at roughly `110 GB` RSS to avoid burning GPUs.
+- Conclusion for this task: the VLA example is launchable and debuggable with the provided scripts, but a first-step-stable profile still needs either more host memory headroom or a lower-replication VLA runtime plan.
+
+## Bottom Line
+- Best latency-oriented multimodal configuration here: `one_step_off_disaggregate | 3B | 1 node`.
+- Best large-scale stability baseline: `sync_colocate | 3B | 32 GPU`.
+- Most important systems conclusion: at larger distributed scale, synchronization and payload growth dominate before replay storage itself becomes the primary bottleneck.

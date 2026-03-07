@@ -157,12 +157,14 @@ case "${MODE}" in
       trainer.n_gpus_per_node=${TRAINER_N_GPUS_PER_NODE} \
       rollout.nnodes=${NNODES} \
       rollout.n_gpus_per_node=${ROLLOUT_N_GPUS_PER_NODE} \
+      rollout.n=${N_RESP_PER_PROMPT} \
       rollout.total_epochs=${TOTAL_EPOCHS} \
       rollout.total_rollout_steps=$(( TRAIN_MAX_SAMPLES * N_RESP_PER_PROMPT * TOTAL_EPOCHS )) \
       rollout.test_freq=0 \
+      trainer.total_training_steps=${TOTAL_TRAINING_STEPS:-1} \
       async_training.staleness_threshold=${STALENESS_THRESHOLD:-0.5} \
-      async_training.trigger_parameter_sync_step=${TRIGGER_PARAMETER_SYNC_STEP:-2} \
-      async_training.require_batches=${REQUIRE_BATCHES:-2} \
+      async_training.trigger_parameter_sync_step=${TRIGGER_PARAMETER_SYNC_STEP:-1} \
+      async_training.require_batches=${REQUIRE_BATCHES:-1} \
       async_training.partial_rollout=${PARTIAL_ROLLOUT:-True} \
       "${EXTRA_ARGS[@]}"
     ;;

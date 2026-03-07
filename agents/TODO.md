@@ -1,20 +1,11 @@
 # TODO
 
 ## Process Maintenance
-- Keep `agents/PROGRESS.md` updated with the current task status.
-- Keep `agents/CHANGELOG.md` updated with every repo-facing process or documentation change.
-- Review `AGENTS.md` whenever contributor workflow requirements change.
-- Do not treat work as complete until updates are committed and pushed to the `tkoniy` remote.
+- Keep `agents/PROGRESS.md`, `agents/TODO.md`, and `agents/CHANGELOG.md` aligned with the current task before commit.
+- Clean stale debug logs, abandoned temp outputs, and throwaway modified files before the final push.
+- Do not treat the task as done until the final commit is pushed to `tkoniy`.
 
-## Multimodality Benchmarks
-- Run and summarize `sync_colocate`, `fully_async_disaggregate`, and `one_step_off_disaggregate` VLM profiling jobs.
-- Validate queue wait, payload size, and stale-sample behavior on 7B before expanding 32B runs.
-- Keep default benchmark runs short and shut down jobs immediately after collecting the target traces.
-- Keep future multimodal experiment launchers on fresh Slurm allocations when operating from an existing compute node session.
-- Switch multimodal launchers to the `~/code/verl_docker` ARM64 image path or its build script before running the remaining benchmarks.
-- Reuse the persistent `~/code/verl_docker/runtime_overlays` CuDNN overlay for the remaining fresh-node SGLang benchmark jobs.
-- Before the final commit, prune stale modified-code experiments and non-essential logs from the working tree so the pushed change set stays focused.
-
-## Follow-up
-- Build or obtain an ARM64 image that includes a working `vllm` dependency chain so `fully_async_disaggregate` can be profiled end-to-end.
-- Revisit `32B` with lower-memory rollout settings, more shards, or multinode placement before treating it as supported on `1 x 4 GH200`.
+## Multimodal / VLA Follow-up
+- If `fully_async + sglang` is revisited, debug the control-flow stall before first step rather than retrying more container permutations.
+- Revisit `32B` only with a more memory-efficient sharding or multinode model placement plan.
+- Expand VLA profiling from the Libero smoke path to a larger matrix only after the 1-step smoke path remains stable.
