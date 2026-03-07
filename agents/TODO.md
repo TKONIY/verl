@@ -27,3 +27,4 @@
 - Benchmark `CosmosEnv` with environment GPUs separated from rollout GPUs on at least one multi-GPU node.
 - Decide whether `LingBot-VA`, `DreamZero`, or `Motus` should be attached to `verl` as actor backends, env backends, or future hybrid worker types.
 - If the Chinese/English `agents/wm/` notes stabilize, consider promoting the user-facing subset into the main `docs/` tree.
+- Keep `agents/wm/VLA_RL_MODES_ONEPAGE.md` aligned with `agents/wm/VLA_RL_MODES.md` when new example categories are added.

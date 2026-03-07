@@ -11,6 +11,7 @@
 - Task: Implement multimodal distributed RL profiling scaffolding, replay/buffer analysis docs, and reproducible experiment scripts.
 - State: Implementing CosmosEnv, third_party intake, and repo-role analysis
 - 2026-03-07: Added `agents/wm/VLA_RL_MODES.md` under `agents/wm/` with a Chinese quick-reference note covering repository task types and a `PPO / GRPO / SAC / SFT` training-mode comparison.
+- 2026-03-07: Added `agents/wm/VLA_RL_MODES_ONEPAGE.md` as a compact one-page cheat sheet for faster onboarding and presentation use.
 - 2026-03-07: Added Slurm guidance that when already on a compute node, heavy `srun` jobs must request fresh node allocations rather than reusing the current node.
 - 2026-03-07: Added ARM64 container guidance to use `~/code/verl_docker` images or build scripts, and require fresh compute-node allocations for heavyweight build and compile tasks.
 - 2026-03-07: Switched the ARM64 SIF launcher from in-container CuDNN writes to a persistent `~/code/verl_docker/runtime_overlays` overlay on shared storage so fresh-node jobs can repair SGLang CuDNN without exhausting writable tmpfs.

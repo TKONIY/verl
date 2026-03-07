@@ -20,6 +20,7 @@
 - 2026-03-07: Patched `scripts/multimodality/run_profiled_grpo_vlm.sh` so `one_step_off_disaggregate` also disables `actor_rollout_ref.hybrid_engine` through script overrides.
 - 2026-03-07: Added `scripts/multimodality/submit_profile_apptainer_ray_slurm.sh` for real multinode `ray_on_slurm` execution with the ARM64 apptainer runtime.
 - 2026-03-07: Added `agents/wm/VLA_RL_MODES.md` and `agents/wm/README.md` with a quick task mapping and training-mode comparison across `PPO`, `GRPO`, `SAC`, and `SFT`.
+- 2026-03-07: Added `agents/wm/VLA_RL_MODES_ONEPAGE.md` as a compact summary page for quick reference and presentation.
 
 - 2026-03-07: Added root-level `third_party/` git submodules for NVIDIA Cosmos repos plus `lingbot-vla`, `lingbot-va`, `dreamzero`, and `Motus`.
 - 2026-03-07: Added experimental `CosmosEnv` support under `verl.experimental.vla`, including `simulator_type=cosmos`, a dataset generator, and single-node/disaggregated SAC launch scripts.
