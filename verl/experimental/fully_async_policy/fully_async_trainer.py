@@ -230,6 +230,7 @@ class FullyAsyncTrainer(SeparateRayPPOTrainer):
             print("[FullyAsyncTrainer] not enough samples collected after loop")
             return None, None
         total_wait_time = consumer_end - consumer_start
+        serialized_payload_bytes = sum(len(sample) for sample in queue_samples if isinstance(sample, bytes | bytearray))
 
         print(
             f"[FullyAsyncTrainer] Loop collection completed: {len(queue_samples)}/{self.required_samples} samples, "
@@ -237,14 +238,26 @@ class FullyAsyncTrainer(SeparateRayPPOTrainer):
             f"mq_len: {queue_len}"
         )
 
+        deserialize_start = time.time()
         queue_samples = [ray.cloudpickle.loads(x) for x in queue_samples]
+        deserialize_time = time.time() - deserialize_start
+
+        assemble_start = time.time()
         # Assemble batch - now working directly with RolloutSample objects
         if self.config.trainer.balance_batch:
             batch = assemble_batch_from_rollout_samples(queue_samples, self.tokenizer, self.config, self._balance_batch)
         else:
             batch = assemble_batch_from_rollout_samples(queue_samples, self.tokenizer, self.config, None)
+        assemble_time = time.time() - assemble_start
 
         batch.meta_info["fully_async/total_wait_time"] = total_wait_time
+        batch.meta_info["fully_async/queue_len_last"] = queue_len
+        batch.meta_info["fully_async/collected_samples"] = len(queue_samples)
+        batch.meta_info["fully_async/queue_payload_bytes"] = serialized_payload_bytes
+        batch.meta_info["fully_async/queue_payload_mb"] = serialized_payload_bytes / 1024**2
+        batch.meta_info["timing_s/queue_wait"] = total_wait_time
+        batch.meta_info["timing_s/deserialize_samples"] = deserialize_time
+        batch.meta_info["timing_s/assemble_batch"] = assemble_time
         return 0, batch
 
     def _create_actor_rollout_classes(self):

@@ -544,3 +544,44 @@ class TestProcessValidationMetrics(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestComputeDataMetricsMultimodal(unittest.TestCase):
+    """Tests for multimodal metric extraction in compute_data_metrics."""
+
+    def test_compute_data_metrics_with_multimodal_inputs(self):
+        class DummyTensorBatch(dict):
+            def __len__(self):
+                return 1
+
+        batch = MagicMock()
+        batch.batch = DummyTensorBatch({
+            "token_level_scores": torch.tensor([[1.0, 2.0]]),
+            "token_level_rewards": torch.tensor([[0.5, 1.0]]),
+            "advantages": torch.tensor([[0.1, 0.2]]),
+            "returns": torch.tensor([[1.1, 1.2]]),
+            "responses": torch.zeros((1, 2)),
+            "attention_mask": torch.tensor([[1, 1, 1, 1]]),
+            "response_mask": torch.tensor([[1, 1]]),
+            "values": torch.tensor([[0.9, 1.0]]),
+        })
+        batch.non_tensor_batch = {
+            "multi_modal_inputs": np.array(
+                [
+                    {
+                        "pixel_values": torch.ones((2, 3, 4, 4), dtype=torch.float32),
+                        "image_grid_thw": torch.tensor([[1, 2, 2], [1, 2, 2]], dtype=torch.long),
+                        "images_seqlens": torch.tensor([64, 64], dtype=torch.long),
+                    }
+                ],
+                dtype=object,
+            )
+        }
+        batch.meta_info = {}
+        metrics = compute_data_metrics(batch, use_critic=True)
+
+        self.assertEqual(metrics["multimodal/sample_count"], 1)
+        self.assertEqual(metrics["multimodal/samples_with_images"], 1)
+        self.assertEqual(metrics["multimodal/image_items"], 2)
+        self.assertGreater(metrics["multimodal/payload_bytes"], 0)
+        self.assertEqual(metrics["multimodal/image_seqlen_mean"], 64.0)
+        self.assertEqual(metrics["multimodal/visual_token_proxy"], 128.0)

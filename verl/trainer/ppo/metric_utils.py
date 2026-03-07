@@ -78,6 +78,124 @@ def _compute_response_info(batch: DataProto) -> dict[str, Any]:
     )
 
 
+def _sum_nested_tensor_bytes(value: Any) -> int:
+    if isinstance(value, torch.Tensor):
+        return value.element_size() * value.numel()
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return int(value.nbytes)
+        return int(sum(_sum_nested_tensor_bytes(v) for v in value.flat))
+    if isinstance(value, dict):
+        return int(sum(_sum_nested_tensor_bytes(v) for v in value.values()))
+    if isinstance(value, list | tuple):
+        return int(sum(_sum_nested_tensor_bytes(v) for v in value))
+    return 0
+
+
+def _to_flat_float_list(value: Any) -> list[float]:
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().reshape(-1).tolist()
+    if isinstance(value, np.ndarray):
+        if value.dtype == object:
+            result = []
+            for item in value.flat:
+                result.extend(_to_flat_float_list(item))
+            return result
+        return value.reshape(-1).tolist()
+    if isinstance(value, list | tuple):
+        result = []
+        for item in value:
+            result.extend(_to_flat_float_list(item))
+        return result
+    if isinstance(value, int | float | np.integer | np.floating):
+        return [float(value)]
+    return []
+
+
+def compute_multimodal_metrics(batch: DataProto) -> dict[str, Any]:
+    metrics = {}
+    non_tensor_batch = getattr(batch, "non_tensor_batch", None) or {}
+    meta_info = getattr(batch, "meta_info", None) or {}
+    multi_modal_inputs = non_tensor_batch.get("multi_modal_inputs", None)
+
+    if batch.batch is None:
+        sample_count = 0
+    elif hasattr(batch.batch, "batch_size") and len(batch.batch.batch_size) > 0:
+        sample_count = int(batch.batch.batch_size[0])
+    elif isinstance(batch.batch, dict):
+        sample_tensor = next((value for value in batch.batch.values() if isinstance(value, torch.Tensor) and value.ndim > 0), None)
+        sample_count = int(sample_tensor.shape[0]) if sample_tensor is not None else 0
+    else:
+        sample_count = len(batch.batch)
+    if sample_count == 0 and multi_modal_inputs is None and "images_seqlens" not in meta_info:
+        return metrics
+
+    if multi_modal_inputs is None:
+        multi_modal_inputs = []
+    elif isinstance(multi_modal_inputs, np.ndarray):
+        multi_modal_inputs = multi_modal_inputs.tolist()
+
+    samples_with_images = 0
+    samples_with_videos = 0
+    total_images = 0
+    total_videos = 0
+    total_payload_bytes = 0
+    image_seqlens = []
+
+    for mm_input in multi_modal_inputs:
+        if not isinstance(mm_input, dict):
+            continue
+
+        total_payload_bytes += _sum_nested_tensor_bytes(mm_input)
+
+        image_grid_thw = mm_input.get("image_grid_thw")
+        video_grid_thw = mm_input.get("video_grid_thw")
+
+        image_count = int(image_grid_thw.shape[0]) if isinstance(image_grid_thw, torch.Tensor) and image_grid_thw.ndim >= 1 else 0
+        video_count = int(video_grid_thw.shape[0]) if isinstance(video_grid_thw, torch.Tensor) and video_grid_thw.ndim >= 1 else 0
+
+        if image_count > 0 or "pixel_values" in mm_input:
+            samples_with_images += 1
+        if video_count > 0 or "pixel_values_videos" in mm_input:
+            samples_with_videos += 1
+
+        total_images += image_count
+        total_videos += video_count
+
+        if "images_seqlens" in mm_input:
+            image_seqlens.extend(_to_flat_float_list(mm_input["images_seqlens"]))
+
+    if not image_seqlens and "images_seqlens" in meta_info:
+        image_seqlens.extend(_to_flat_float_list(meta_info["images_seqlens"]))
+
+    if samples_with_images > 0 or samples_with_videos > 0 or total_payload_bytes > 0 or image_seqlens:
+        metrics.update(
+            {
+                "multimodal/sample_count": sample_count,
+                "multimodal/samples_with_images": samples_with_images,
+                "multimodal/samples_with_videos": samples_with_videos,
+                "multimodal/image_items": total_images,
+                "multimodal/video_items": total_videos,
+                "multimodal/payload_bytes": total_payload_bytes,
+                "multimodal/payload_mb": total_payload_bytes / 1024**2,
+                "multimodal/payload_bytes_per_sample": total_payload_bytes / max(sample_count, 1),
+            }
+        )
+
+    if image_seqlens:
+        image_seqlens_arr = np.asarray(image_seqlens, dtype=float)
+        metrics.update(
+            {
+                "multimodal/image_seqlen_mean": float(image_seqlens_arr.mean()),
+                "multimodal/image_seqlen_max": float(image_seqlens_arr.max()),
+                "multimodal/image_seqlen_min": float(image_seqlens_arr.min()),
+                "multimodal/visual_token_proxy": float(image_seqlens_arr.sum()),
+            }
+        )
+
+    return metrics
+
+
 def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> dict[str, Any]:
     """
     Computes various metrics from a batch of data for PPO training.
@@ -221,6 +339,8 @@ def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> dict[str,
         metrics["tool_call_counts/min"] = tool_call_counts.min()
         metrics["tool_call_counts/max"] = tool_call_counts.max()
         metrics["tool_call_counts/mean"] = tool_call_counts.mean()
+
+    metrics.update(compute_multimodal_metrics(batch))
 
     return metrics
 
