@@ -1,16 +1,17 @@
 # Main Worktree Handoff
 
 ## Recommended Cherry-Pick
-The isolated profiling work is fully captured by commit:
+The isolated profiling work is captured by these two follow-up commits:
 - `8917d6d1` — `[scripts,agents] feat: finalize multimodal profiling artifacts`
+- `36cf97cb` — `[agents,scripts] docs: add handoff and timing breakdown`
 
-The earlier multimodal workflow base commit `c1900196` is already the shared ancestor that this isolated worktree was created from, so the main worktree only needs the follow-up commit above.
+The earlier multimodal workflow base commit `c1900196` is already the shared ancestor that this isolated worktree was created from, so the main worktree only needs the two follow-up commits above.
 
 ## Safe Apply Procedure
 From the main worktree, first make sure the other Codex agent's edits are either committed or stashed. Then apply:
 
 ```bash
-git cherry-pick 8917d6d1
+git cherry-pick 8917d6d1 36cf97cb
 ```
 
 If the main worktree still has parallel edits under `agents/`, `scripts/multimodality/`, or `scripts/vla/`, prefer this order:
@@ -18,7 +19,7 @@ If the main worktree still has parallel edits under `agents/`, `scripts/multimod
 ```bash
 git status
 git stash push -u -m codex-parallel-edits
-git cherry-pick 8917d6d1
+git cherry-pick 8917d6d1 36cf97cb
 git stash pop
 ```
 
