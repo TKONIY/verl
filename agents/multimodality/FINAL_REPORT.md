@@ -60,6 +60,28 @@
 - At `32 GPU`, `one_step_off_disaggregate` raises throughput but also expands payload size and weight-sync overhead sharply; that mode is no longer latency-efficient per step.
 - The `32 GPU` sync baseline keeps per-step latency close to the `1 node` case because generation parallelizes well, but total distributed coordination still limits end-to-end throughput efficiency.
 
+## Timing and Transfer Share
+- Quantitative component shares are tabulated in `runs/multimodality/component_breakdown.md`.
+- For the most relevant `3B` runs:
+  - `sync | 1 node`: generation `62.5%`, transport proxy `10.8%`, overlap lower bound `0.0%`
+  - `one_step_off | 1 node`: generation `57.0%`, transport proxy `12.0%`, overlap lower bound `4.1%`
+  - `sync | 32 GPU`: generation `22.9%`, transport proxy `31.7%`, overlap lower bound `0.0%`
+  - `one_step_off | 32 GPU`: generation `25.1%`, transport proxy `72.6%`, overlap lower bound `23.6%`
+- Interpretation:
+  - On `1 node`, multimodal transfer / synchronization is noticeable but still secondary to generation and reference computation.
+  - On `32 GPU`, transport and synchronization become first-order costs, especially for `one_step_off_disaggregate` where weight movement and synchronization dominate the step timeline.
+  - The nonzero overlap lower bound in `one_step_off` means some communication is hidden under compute, but not enough to offset the large transport growth at scale.
+
+## Cross-Machine Multimodal Transfer
+- Across machines, the system does **not** literally move only metadata end-to-end. What should stay as metadata in replay is the persistent representation: media path, cache key, and compact identifiers.
+- During execution, each stage still must receive enough materialized data to do work:
+  - prompt / response token ids
+  - masks and scalar PPO metadata
+  - rollout parameter version
+  - either decoded multimodal tensors, or references that trigger remote fetch / decode on the consumer side
+- In this cluster setup, shared storage lets us avoid serializing raw image bytes through the replay queue itself, but that does **not** remove cross-machine data motion; it shifts the cost into worker-side fetch / decode, object-store movement, and synchronization.
+- Therefore `multimodal/payload_mb` should be read as the effective multimodal batch payload associated with a training step, while `update_weights + sync_rollout_weights` is the best available proxy for transport / synchronization time in the current logs.
+
 ## Replay / Buffer Conclusion
 - The replay path should store tokenized trajectories, scalar learning metadata, rollout versioning, and media references.
 - Do not default to raw image bytes, decoded `pixel_values`, dense visual embeddings, or simulator objects inside replay.

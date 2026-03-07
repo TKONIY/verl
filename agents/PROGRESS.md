@@ -14,6 +14,7 @@
 - 2026-03-07: Added `scripts/multimodality/extract_trainlog_metrics.py` and generated reproducible JSON summaries under `runs/multimodality/summaries/`.
 - 2026-03-07: Confirmed the large-scale comparison pair: `sync_colocate | 3B | 32 GPU` and `one_step_off_disaggregate | 3B | 32 GPU`.
 - 2026-03-07: Updated the VLA launcher to fix `DISAGG_SIM_ENABLE` expansion and to force Ray temp directories onto writable container paths instead of `/local`.
+- 2026-03-07: Added a quantitative component/transport-share breakdown plus a main-worktree cherry-pick handoff and a lower-memory VLA follow-up plan.
 
 ## Final Status
 - Multimodal profiling is complete with reproducible scripts, extracted metrics, suite summaries, and a final report.
