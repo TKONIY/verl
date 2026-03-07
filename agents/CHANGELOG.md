@@ -6,6 +6,7 @@
 - Updated `AGENTS.md` to require maintaining tracking docs, committing changes, and pushing to `tkoniy`.
 
 ## 2026-03-07
+- Added `agents/multimodality/IMAGE_TRANSFER_SUMMARY.md` with a concise explanation of when images are fetched versus when metadata should move.
 - Added a main-worktree cherry-pick handoff note, a lower-memory VLA follow-up plan, and a quantitative multimodal component/transport-share breakdown.
 - Added multimodal profiling scripts and Slurm launchers for fresh-node ARM64 runs.
 - Added train-log metric extraction so successful runs without `metrics.jsonl` still produce reproducible summaries.

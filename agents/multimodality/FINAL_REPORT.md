@@ -81,6 +81,7 @@
   - either decoded multimodal tensors, or references that trigger remote fetch / decode on the consumer side
 - In this cluster setup, shared storage lets us avoid serializing raw image bytes through the replay queue itself, but that does **not** remove cross-machine data motion; it shifts the cost into worker-side fetch / decode, object-store movement, and synchronization.
 - Therefore `multimodal/payload_mb` should be read as the effective multimodal batch payload associated with a training step, while `update_weights + sync_rollout_weights` is the best available proxy for transport / synchronization time in the current logs.
+- A shorter operational summary of when images move and who fetches them is in `agents/multimodality/IMAGE_TRANSFER_SUMMARY.md`.
 
 ## Replay / Buffer Conclusion
 - The replay path should store tokenized trajectories, scalar learning metadata, rollout versioning, and media references.
