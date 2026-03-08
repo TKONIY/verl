@@ -23,7 +23,9 @@
 - Revisit whether joint world-action models need a new hybrid actor-env worker contract instead of only `CosmosEnv`-style env adapters.
 
 ## World-Model Integration
+- Build or obtain an ARM64 image with native `redis-server`, `vllm`, and the full `cosmos-rl[wfm,vla,rl]` dependency chain so the compatibility wrappers can be removed.
 - Validate a real `cosmos-predict2.5` checkpoint path once the official CUDA extras and weights are staged on a fresh compute node.
 - Benchmark `CosmosEnv` with environment GPUs separated from rollout GPUs on at least one multi-GPU node.
 - Decide whether `LingBot-VA`, `DreamZero`, or `Motus` should be attached to `verl` as actor backends, env backends, or future hybrid worker types.
 - If the Chinese/English `agents/wm/` notes stabilize, consider promoting the user-facing subset into the main `docs/` tree.
+- Keep `agents/wm/VLA_RL_MODES_ONEPAGE.md` aligned with `agents/wm/VLA_RL_MODES.md` when new example categories are added.

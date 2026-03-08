@@ -52,3 +52,36 @@ The code also validates a future `cosmos_predict2`-style path through `third_par
 2. Generate a minimal dataset with `python -m verl.experimental.vla.prepare_cosmos_dataset`.
 3. Run the smoke path with `verl/experimental/vla/run_pi05_cosmos_sac.sh`.
 4. Scale to disaggregated train/env nodes with `verl/experimental/vla/run_pi05_cosmos_sac_disagg.sh`.
+
+## `cosmos-rl` smoke run in this cluster
+
+For the current GH200 ARM64 environment, the most reproducible minimal `cosmos-rl` path is:
+
+```bash
+bash scripts/run_cosmos_rl_smoke_apptainer.sh
+```
+
+What the script does:
+
+- uses the existing ARM64 apptainer image from `~/code/verl_docker`
+- creates a temporary `--system-site-packages` venv inside the container
+- installs only the Python packages that were missing from the base image for a minimal `cosmos-rl` SFT path
+- provides wrapper scripts for `redis-server` and `torchrun`
+- runs a `1 GPU`, `1 step` SFT smoke example against the local fixture dataset in `third_party/cosmos-rl/tests/data_fixtures/sharegpt52k_small`
+
+## Direct-run verdict for `cosmos-rl`
+
+In the current workspace environment, `cosmos-rl` is **not** directly runnable on the bare host.
+
+Main reasons:
+
+- the host Python environment does not include GPU `torch` and other core runtime packages
+- the base ARM64 image is close, but still misses several Python packages required by `cosmos-rl`
+- the controller expects a `redis-server` executable
+- the `redislite` Redis binary used here rejects the generated `tls-port 0` config entry, so the wrapper strips that line for compatibility
+
+So the practical answer is:
+
+- not direct on bare host
+- runnable inside the apptainer image with a small compatibility shim
+
