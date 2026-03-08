@@ -13,6 +13,7 @@
 - 2026-03-07: Saved extracted metric JSON files under `runs/multimodality/summaries/` for all successful baseline runs.
 - 2026-03-07: Added `runs/multimodality/summary_suite.md` with a single comparison table covering `1 node` and `32 GPU` runs.
 - 2026-03-07: Confirmed the `fully_async` terminal symptom is a pre-step stall after `CheckpointEngineWorker` initialization, not the earlier missing-`vllm` import path.
+- 2026-03-08: Added a live `verl-agent` audit plus an agentic VLM open-source comparison, including crop/search capability notes for the current `verl` and `verl-agent` codebases.
 
 ## Final Status
 - Multimodal profiling report is ready.

@@ -16,6 +16,7 @@
 - 2026-03-07: Updated the VLA launcher to fix `DISAGG_SIM_ENABLE` expansion and to force Ray temp directories onto writable container paths instead of `/local`.
 - 2026-03-07: Added a quantitative component/transport-share breakdown plus a main-worktree cherry-pick handoff and a lower-memory VLA follow-up plan.
 - 2026-03-07: Added a concise image-transfer summary explaining when images are fetched, when only metadata should move, and why cross-machine cost is often shared-storage fetch plus synchronization rather than raw-byte RPC alone.
+- 2026-03-08: Added an external `verl-agent` inspection note and an agentic VLM open-source comparison to guide follow-on benchmark and tooling work.
 
 ## Final Status
 - Multimodal profiling is complete with reproducible scripts, extracted metrics, suite summaries, and a final report.

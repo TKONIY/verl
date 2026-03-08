@@ -99,6 +99,10 @@
 - The remaining blocker is pre-step worker / model materialization pressure: `vla_libero_grpo_smoke10_wt_20260307_231332` hits Slurm OOM shortly after local Ray startup, while `vla_libero_grpo_smoke11_wt_20260307_231610` avoids immediate OOM but shows no post-`ray.init` progress and was cancelled after ~5 minutes at roughly `110 GB` RSS to avoid burning GPUs.
 - Conclusion for this task: the VLA example is launchable and debuggable with the provided scripts, but a first-step-stable profile still needs either more host memory headroom or a lower-replication VLA runtime plan.
 
+## Further Reading
+- `agents/multimodality/VERL_AGENT_CODE_INSPECTION_PLAN.md` records the live audit of `verl-agent` and the current conclusion that its VLM path is environment-driven.
+- `agents/multimodality/AGENTIC_VLM_OPEN_SOURCE_COMPARISON.md` compares `verl`, `verl-agent`, and several open-source agentic VLM projects from the perspective of RL, GUI/OS support, and crop/search capability.
+
 ## Bottom Line
 - Best latency-oriented multimodal configuration here: `one_step_off_disaggregate | 3B | 1 node`.
 - Best large-scale stability baseline: `sync_colocate | 3B | 32 GPU`.
