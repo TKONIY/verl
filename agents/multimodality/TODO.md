@@ -12,3 +12,5 @@
 ## Follow-up
 - Add a `vllm`-capable ARM64 runtime path for `fully_async_disaggregate`.
 - Retry `32B` with a more memory-efficient sharding or multinode layout.
+
+- If a new multimodal tool example is added, extend `agents/multimodality/ZOOM_TOOL_AUDIT.md` and compare it against `recipe/deepeyes/` rather than assuming `zoom_out` support already exists.

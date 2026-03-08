@@ -27,3 +27,5 @@
 - Benchmark `CosmosEnv` with environment GPUs separated from rollout GPUs on at least one multi-GPU node.
 - Decide whether `LingBot-VA`, `DreamZero`, or `Motus` should be attached to `verl` as actor backends, env backends, or future hybrid worker types.
 - If the Chinese/English `agents/wm/` notes stabilize, consider promoting the user-facing subset into the main `docs/` tree.
+
+- If visual tool training needs a fresh repro run, start from `recipe/deepeyes/run_deepeyes_grpo.sh` and keep the audit in `agents/multimodality/ZOOM_TOOL_AUDIT.md` aligned with any new zoom or crop tools.

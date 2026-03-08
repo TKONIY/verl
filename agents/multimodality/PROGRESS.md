@@ -22,4 +22,5 @@
 - 2026-03-07: Confirmed `one_step_off_disaggregate` shares the same hybrid-engine assertion path as `fully_async` and updated the launcher override accordingly.
 
 ## Final Status
+- 2026-03-08: Audited all freshly pulled submodules and confirmed `recipe/deepeyes/` is the only runnable multimodal RL recipe using the repository `image_zoom_in_tool`; other zoom references are tests, tutorial mentions, or unrelated third-party video assets.
 - 2026-03-07: Finished the planned fresh-node benchmark pass and published summaries for `sync_colocate` (`3B`, `7B`) and `one_step_off_disaggregate` (`3B`, `7B`), with explicit blocker notes for `fully_async_disaggregate` and `32B` single-node memory limits.

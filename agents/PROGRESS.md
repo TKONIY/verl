@@ -21,6 +21,7 @@
 - 2026-03-07: Updated the one-step-off launcher path to pass `actor_rollout_ref.hybrid_engine=False`, matching the async/disaggregate requirement without touching source code.
 
 ## Final Status
+- 2026-03-08: Pulled all git submodules in an isolated worktree, confirmed `recipe/deepeyes/` is the canonical visual zoom-tool recipe, and documented that no other runnable `zoom_out` tool example exists under `recipe/` or `examples/`.
 - 2026-03-07: Implemented root-level third-party world-model intake plus experimental `CosmosEnv` support, with multi-GPU launchers and repo-role analysis docs for external VLA/world-model projects.
 - 2026-03-07: Completed the multimodal distributed RL profiling pass on fresh compute nodes, with successful `sync_colocate` runs at `3B` and `7B`, successful `one_step_off_disaggregate` runs at `3B` and `7B`, a documented `32B` single-node OOM boundary, and a documented `fully_async_disaggregate` blocker in the current ARM64 image.
 - 2026-03-07: Added a true `apptainer + ray_on_slurm` submit path for multinode runs, replacing the invalid `-N 2 --ntasks=1` shortcut that Slurm collapsed back to one node.

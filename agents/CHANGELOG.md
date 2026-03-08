@@ -25,3 +25,4 @@
 - 2026-03-07: Added experimental `CosmosEnv` support under `verl.experimental.vla`, including `simulator_type=cosmos`, a dataset generator, and single-node/disaggregated SAC launch scripts.
 - 2026-03-07: Added world-model role analysis notes in `agents/wm/` and public docs `docs/examples/cosmos_world_model_rl.md` plus `docs/examples/cosmos_world_model_rl_zh.md` to explain how Cosmos, LingBot, DreamZero, and Motus map onto RL and whether they fit the current `verl` contracts.
 - 2026-03-07: Added bilingual design notes in `agents/wm/WORLD_MODEL_RL_FRAMEWORK.md` and `agents/wm/WORLD_MODEL_RL_FRAMEWORK_zh.md` describing a dedicated embodied/world-model RL framework and the biggest conceptual differences from `verl`.
+- 2026-03-08: Pulled all submodules recursively and added `agents/multimodality/ZOOM_TOOL_AUDIT.md` documenting that `recipe/deepeyes/` is the only runnable zoom-tool RL example in-tree, while `zoom_out` only appears in unrelated third-party video assets.

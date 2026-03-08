@@ -12,3 +12,5 @@
 - 2026-03-07: Changed the ARM64 apptainer launcher to repair SGLang CuDNN via a persistent overlay under `~/code/verl_docker/runtime_overlays`, keeping heavyweight package writes off the container tmpfs.
 - 2026-03-07: Bound the shared `~/code/verl_docker/runtime_overlays` CuDNN/CUBLAS directories onto the container `site-packages` tree so fresh-node Ray/SGLang workers see CuDNN 9.16 without source edits.
 - 2026-03-07: Added `agents/multimodality/FINAL_REPORT.md` and `runs/multimodality/summary_suite.md` summarizing the successful runs, the `fully_async` dependency blocker, and the `32B` OOM boundary.
+
+- 2026-03-08: Added `agents/multimodality/ZOOM_TOOL_AUDIT.md` after a full recursive submodule sync, identifying `recipe/deepeyes/` as the only runnable zoom-tool recipe and classifying other zoom references as tests, tutorial notes, or third-party transport/video utilities.
